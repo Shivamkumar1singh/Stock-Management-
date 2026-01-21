@@ -13,7 +13,7 @@ class StoreCategoryRequest extends FormRequest
 
     public function rules()
     {
-        return [ 'name' => 'required|string|max:255|regex:/^[a-zA-Z][a-zA-Z0-9]*$/|unique:categories,name'];
+        return [ 'name' => 'required|string|max:255|regex:/^[a-zA-Z][a-zA-Z0-9 ]*$/|unique:categories,name'];
     }
 
     public function messages()

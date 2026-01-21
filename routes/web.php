@@ -43,6 +43,8 @@ Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.s
 Route::get('/product/{product}/edit', [ProductController::class, 'edit'])->name('product.edit');
 Route::put('/product/{product}', [ProductController::class, 'update'])->name('product.update');
 Route::delete('/product/{product}', [ProductController::class, 'destroy'])->name('product.destroy');
+Route::post('/product/temp-upload', [ProductController::class, 'tempUpload'])
+    ->name('product.temp.upload');
 Route::get('/product/depreciation/export', [ProductController::class, 'exportDepreciation'])->name('product.depreciation.export');
 
 //this is for the categories

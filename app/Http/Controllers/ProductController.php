@@ -53,6 +53,30 @@ class ProductController extends Controller
         ]);      
     }
 
+    public function tempUpload(Request $request)
+    {
+        $request->validate([
+            'product_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+    
+        // delete previous temp if exists
+        if (session()->has('temp_image_path')) {
+            Storage::disk('public')->delete(session('temp_image_path'));
+        }
+    
+        $path = $request->file('product_image')->store('temp/products', 'public');
+    
+        session([
+            'temp_image_path' => $path,
+            'temp_image_url' => Storage::url($path),
+        ]);
+    
+        return response()->json([
+            'url' => Storage::url($path),
+        ]);
+    }
+
+
     public function store(StoreProductRequest $request, DepreciationService $depreciationService)
     {
         $data = $request->validated();

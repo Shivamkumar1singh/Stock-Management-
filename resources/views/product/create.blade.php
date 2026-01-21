@@ -161,20 +161,33 @@
 </script>
 
 <script>
-    document.getElementById('product_image_input').addEventListener('change', function(event) {
-    const reader = new FileReader();
-    reader.onload = function() {
-        const output = document.getElementById('image_preview');
-        const container = document.getElementById('image_preview_container');
-        output.src = reader.result;
-        container.style.display = 'block';
-    };
-    if(event.target.files[0]) {
-        reader.readAsDataURL(event.target.files[0]);
-    }
+document.addEventListener('DOMContentLoaded', function () {
+    const imageInput = document.getElementById('product_image_input');
+    const previewImg = document.getElementById('image_preview');
+    const previewContainer = document.getElementById('image_preview_container');
+
+    imageInput.addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('product_image', file);
+
+        fetch("{{ route('product.temp.upload') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            previewImg.src = data.url;
+            previewContainer.style.display = 'block';
+        });
+    });
 });
 </script>
-
 
 <script>
     let isSubmitting = false;
@@ -191,7 +204,6 @@
         );
     });
 </script>
-
 
 <script>
     document.getElementById('status').addEventListener('change', function() {

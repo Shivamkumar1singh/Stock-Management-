@@ -56,21 +56,7 @@ class StoreProductRequest extends FormRequest
         ];
     }
 
-    protected function failedValidation(Validator $validator)
-    {
-        if ($this->hasFile('product_image')) {
-            if (Session::has('temp_image_path')) {
-                Storage::disk('public')->delete(Session::get('temp_image_path'));
-            }
-
-            $tempPath = $this->file('product_image')->store('temp/products', 'public');
-
-            Session::put('temp_image_path', $tempPath);
-            Session::put('temp_image_url', Storage::url($tempPath));
-        }
-
-        parent::failedValidation($validator);
-    }
+    
 
     
 }
