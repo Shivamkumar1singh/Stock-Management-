@@ -21,12 +21,6 @@ class SettingController extends Controller
 
     public function update(UpdateSettingRequests $request, DepreciationService $depreciationService)
     {
-        // $request->validate([
-        //     'sgst_rate' => 'required|numeric|min:0|max:100',
-        //     'cgst_rate' => 'required|numeric|min:0|max:100',
-        //     'depreciation_rate' => 'required|numeric|min:0|max:100',
-        // ]);
-
         foreach ($request->only([
             'sgst_rate',
             'cgst_rate',
