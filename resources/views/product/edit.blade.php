@@ -4,13 +4,13 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Edit Product Details</h4>
-        <a href="{{ route('product.index') }}" class="btn btn-secondary btn-sm">
+        <a href="{{ route('product.temp.cancel') }}" class="btn btn-secondary btn-sm">
             Back
         </a>
     </div>
     <div class="card">
         <div class="card-body">
-            <form action="{{ route('product.update', $product->id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('product.update', $product->id) }}" method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
                 @method('PUT')
                  
@@ -38,7 +38,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">Product Image</label>
-                    <input type="file" name="product_image" class="form-control @error('product_image') is-invalid @enderror">
+                    <input type="file" name="product_image"  class="form-control @error('product_image') is-invalid @enderror" accept=".jpg, .png, .jpeg">
                     @if ($product->product_image)
                         <div class="mt-2">
                             <img src="{{ asset('storage/'.$product->product_image) }}" width="80" class="img-thumbnail" alt="Product Image">
@@ -58,12 +58,22 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">GST/SGST Amount</label>
-                    <input type="number" min="1" step="0.01" name="gst_amount" id="gst_amount" class="form-control @error('gst_amount') is-invalid @enderror" value="{{ $product->gst_amount }}">
-                    @error('gst_amount')
+                    <label class="form-label">Quantity</label>
+                    <input type="number" name="quantity" id="quantity" min="1" max="100" class="form-control @error('quantity') is-invalid @enderror" value="{{ old('quantity', $product->quantity ?? 1) }}" required>
+                    @error('quantity')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+
+                <div class="mb-3">
+                    <label class="form-label">GST Amount (Auto Calculated)</label>
+                    <input type="number" id="gst_amount"
+                           class="form-control"
+                           value="{{ $product->gst_amount }}"
+                           readonly>
+                </div>
+
 
                 <div class="mb-3">
                     <label class="form-label">Total Price</label>
@@ -111,7 +121,7 @@
 
                 <div class="text-end">
                     <button type="submit" class="btn btn-primary">Update</button>
-                    <a href="{{ route('product.index') }}" class="btn btn-secondary">Cancel</a>   
+                    <a href="{{ route('product.temp.cancel') }}" class="btn btn-secondary">Cancel</a>   
                 </div>
             </form>
         </div>
@@ -121,15 +131,48 @@
 
 @push('scripts')
 <script>
-    function calculateTotal(){
-        let price = parseFloat(document.getElementById('product_price').value) || 0;
-        let gst = parseFloat(document.getElementById('gst_amount').value) || 0;
+    const sgst = {{ $sgst }};
+    const cgst = {{ $cgst }};
 
-        document.getElementById('total_price').value = (price + gst).toFixed(2);
+    function calculateGST() {
+        let price = parseFloat(document.getElementById('product_price').value) || 0;
+        let quantity = parseFloat(document.getElementById('quantity')?.value) || 1;
+        if(quantity>=1 && quantity<=100)
+        {
+            let baseAmount = price * quantity;
+    
+            let gstAmount = baseAmount * (sgst + cgst) / 100;
+            
+            let total = baseAmount + gstAmount;
+    
+            document.getElementById('gst_amount').value = gstAmount.toFixed(2);
+            document.getElementById('total_price').value = total.toFixed(2);
+        }
     }
-    document.getElementById('product_price').addEventListener('input', calculateTotal);
-    document.getElementById('gst_amount').addEventListener('input', calculateTotal);
+
+    document.getElementById('product_price').addEventListener('input', calculateGST);
+    document.getElementById('quantity').addEventListener('input', calculateGST);
+
+    calculateGST();
 </script>
+
+<script>
+    let isSubmitting = false;
+
+    document.querySelector('form').addEventListener('submit', function () {
+        isSubmitting = true;
+    });
+
+    window.addEventListener('beforeunload', function () {
+        if (isSubmitting) return;
+
+        navigator.sendBeacon(
+            "{{ route('product.temp.clear') }}"
+        );
+    });
+</script>
+
+
 
 <script>
     document.getElementById('status').addEventListener('change', function () {

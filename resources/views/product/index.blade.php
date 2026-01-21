@@ -45,9 +45,10 @@
                         <th>Product Image</th>
                         <th>Product Name</th>
                         <th>Product Price</th>
-                        <th>GST/SGST Amount</th>
+                        <th>Product Quantity</th>
+                        <th>CGST+SGST Amount</th>
                         <th>Total Cost</th>
-                        <th>Date Of Purchase</th>
+                        <th>Date Of Purchased</th>
                         <th>Date Of Manufacture</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -81,12 +82,14 @@ $(function () {
             { data: 'product_image' },
             { data: 'product_name' },
             { data: 'product_price' },
+            { data: 'quantity' },
             { data: 'gst_amount'},
             { data: 'total_price' },
             { data: 'purchase_date' },
             { data: 'manufacture_date'},
             { data: 'status', orderable: false },
-            { data: 'actions', orderable: false, searchable: false }
+            { data: 'actions', orderable: false, searchable: false },
+            { data: 'created_at', name: 'created_at', visible: false, searchable: false }
         ]
     });
 });

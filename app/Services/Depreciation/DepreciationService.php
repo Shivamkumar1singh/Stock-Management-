@@ -5,6 +5,7 @@ namespace App\Services\Depreciation;
 use App\Models\Product;
 use App\Repository\Depreciation\DepreciationRepository;
 use Illuminate\Support\Facades\DB;
+use App\Models\Setting;
 
 class DepreciationService
 {
@@ -15,8 +16,9 @@ class DepreciationService
         $this->depreciation_repo = $depreciation_repo;
     }
 
-    public function depreciation(Product $product, float $rate = 5, bool $forceRegenerate = false)
+    public function depreciation(Product $product, ?float $rate = null, bool $forceRegenerate = false)
     {
+        $rate = $rate ?? Setting::getValue('depreciation_rate', 0);
         DB::transaction(function () use ($product, $rate, $forceRegenerate) {
 
             if ($forceRegenerate) {
@@ -77,7 +79,7 @@ class DepreciationService
                 }
     
                 $depreciationAmount = round(($start_value * $rate) / 100, 2);
-                $end_value = round($start_value - $depreciationAmount,2);
+                $end_value = max(round($start_value - $depreciationAmount,2),0);
     
                 $this->depreciation_repo->create([
                     'product_id' => $product->id,

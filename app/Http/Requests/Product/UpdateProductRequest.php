@@ -3,6 +3,9 @@
 namespace App\Http\Requests\Product;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Contracts\Validation\Validator;
 
 class UpdateProductRequest extends FormRequest
 {
@@ -15,9 +18,10 @@ class UpdateProductRequest extends FormRequest
     {
         return [
             'category_id' => 'required|exists:categories,id',
-            'product_name' => 'required|string|max:255|regex:/^[A-Za-z].*/',
+            'product_name' => 'required|string|max:255|regex:/^[a-zA-Z][a-zA-Z0-9 ]*$/',
             'product_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'product_price' => 'required|numeric',
+            'quantity' => 'required|integer|min:1|max:100',
             'gst_amount' => 'nullable|numeric|lte:product_price',
             'manufacture_date' => 'required|date|before_or_equal:today',
             'purchase_date' => 'required|date|after_or_equal:manufacture_date|before_or_equal:today',
@@ -33,6 +37,10 @@ class UpdateProductRequest extends FormRequest
             'product_name.regex' => 'Product name must start with an alphabet.',
             'product_price.min' => 'Enter the price greater than 1.',
             'product_price.numeric' => 'Enter the price in positive number only.',
+
+            'quantity.min' => 'Enter the quantity greater than or equals to 1.',
+            'quantity.max' => 'Enter the quantity less than or equals to 100.',
+            'quantity.numeric' => 'Enter the quantity in positive number only.',
             
             'gst_amount.min' => 'Enter the GST amount greater than 0.',
             'gst_amount.numeric' => 'Enter the GST amount in positive number only.',
@@ -45,5 +53,24 @@ class UpdateProductRequest extends FormRequest
             
             'required' => 'The :attribute field is required.',
         ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        if ($this->hasFile('product_image')) {
+
+            // delete previous temp image
+            if (Session::has('temp_image_path')) {
+                Storage::disk('public')->delete(Session::get('temp_image_path'));
+            }
+
+            $tempPath = $this->file('product_image')
+                ->store('temp/products', 'public');
+
+            Session::put('temp_image_path', $tempPath);
+            Session::put('temp_image_url', Storage::url($tempPath));
+        }
+
+        parent::failedValidation($validator);
     }
 }

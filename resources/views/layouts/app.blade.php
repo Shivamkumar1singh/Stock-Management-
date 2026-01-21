@@ -132,7 +132,7 @@
                 <a href="{{ route('home') }}">Dashboard</a>
                 <a href="{{ route('product.index') }}">Products</a>
                 <a href="{{ route('category.index') }}">Categories</a>
-
+                <a href="{{ route('setting.edit')}}" >Settings</a>
              </div>
         @endauth
 

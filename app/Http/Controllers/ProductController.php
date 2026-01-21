@@ -13,6 +13,9 @@ use App\Http\Requests\Product\UpdateProductRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Exports\DepreciationExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Setting;
+
+
 
 
 class ProductController extends Controller
@@ -42,20 +45,46 @@ class ProductController extends Controller
 
     public function create()
     {
-        $categories = Category::all();
-        return view('product.create', compact('categories'));       
+        $categories = Category::all(); 
+        return view('product.create', [
+            'categories' => $categories,
+            'sgst' => Setting::getValue('sgst_rate', 0),
+            'cgst' => Setting::getValue('cgst_rate', 0),
+        ]);      
     }
 
     public function store(StoreProductRequest $request, DepreciationService $depreciationService)
     {
         $data = $request->validated();
 
-        if ($request->hasFile('product_image')) {
-            $data['product_image'] = $request->file('product_image')
-               ->store('product', 'public');
+        if(session()->has('temp_image_path')){
+            $finalPath = str_replace(
+                'temp/products',
+                'product',
+                session('temp_image_path')
+            );
+
+            Storage::disk('public')->move(
+                session('temp_image_path'),
+                $finalPath
+            );
+
+            $data['product_image'] = $finalPath;
+
+            session()->forget(['temp_image_path', 'temp_image_url']);
         }
 
-        $data['total_price'] = ($data['product_price'] ?? 0) + ($data['gst_amount'] ?? 0);
+        $sgst = Setting::getValue('sgst_rate', 0);
+        $cgst = Setting::getValue('cgst_rate', 0);
+        
+        $baseAmount = $data['product_price'] * $data['quantity'];
+
+        $gstAmount = ($baseAmount * ($sgst + $cgst)) / 100;
+        
+        $data['gst_amount'] = $gstAmount;
+        $data['total_price'] = $baseAmount + $gstAmount;
+
+
 
         if (($data['status'] ?? null) !== 'furnished') {
             $data['furnished_date'] = null;
@@ -74,22 +103,60 @@ class ProductController extends Controller
     {
         $categories = Category::all();
 
-        return view('product.edit', compact('product', 'categories'));
+        // return view('product.edit', compact('product', 'categories'));
+        return view('product.edit', [
+            'product' => $product,
+            'categories' => $categories,
+            'sgst' => Setting::getValue('sgst_rate', 0),
+            'cgst' => Setting::getValue('cgst_rate', 0),
+        ]);
     }
 
     public function update(UpdateProductRequest $request,Product $product, DepreciationService $depreciationService)
     {
         $data =$request->validated();
 
-        if ($request->hasFile('product_image'))
-        {
-            if($product->product_image)
-            {
-                Storage::disk('public')->delete($product->product_image);
-            }
-            $data['product_image'] = $request->file('product_image')->store('product','public');
+        if (session()->has('temp_image_path')) {
+
+        if ($product->product_image) {
+            Storage::disk('public')->delete($product->product_image);
         }
-            $data['total_price'] = ($data['product_price'] ?? 0) + ($data['gst_amount'] ?? 0);
+
+        $finalPath = str_replace(
+            'temp/products',
+            'product',
+            session('temp_image_path')
+        );
+
+        Storage::disk('public')->move(
+            session('temp_image_path'),
+            $finalPath
+        );
+
+        $data['product_image'] = $finalPath;
+
+        session()->forget(['temp_image_path', 'temp_image_url']);
+    }
+
+    elseif ($request->hasFile('product_image')) {
+
+        if ($product->product_image) {
+            Storage::disk('public')->delete($product->product_image);
+        }
+
+        $data['product_image'] = $request->file('product_image')
+            ->store('product', 'public');
+    }
+
+            $sgst = Setting::getValue('sgst_rate', 0);
+            $cgst = Setting::getValue('cgst_rate', 0);
+            
+            $baseAmount = $data['product_price'] * $data['quantity'];
+
+            $gstAmount = ($baseAmount * ($sgst + $cgst)) / 100;
+            
+            $data['gst_amount'] = $gstAmount;
+            $data['total_price'] = $baseAmount + $gstAmount;
             
             if ($data['status'] !== 'furnished') {
                 $data['furnished_date'] = null;
@@ -97,7 +164,9 @@ class ProductController extends Controller
             }
 
             $updated = $this->productService->update($product,$data,true);
-            $depreciationService->depreciation($updated,5,true);
+            $rate = Setting::getValue('depreciation_rate', 0);
+            $depreciationService->depreciation($updated, $rate, true);
+
 
             return redirect()->route('product.index')->with('success', 'Product updated successfully.');
         

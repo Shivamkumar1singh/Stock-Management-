@@ -5,7 +5,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Add New Product</h4>
-        <a href="{{ route('product.index') }}" class="btn btn-secondary btn-sm">Back</a>        
+        <a href="{{ route('product.temp.cancel') }}" class="btn btn-secondary btn-sm">Back</a>        
     </div>    
     <div class="card">
         <div class="card-body">
@@ -25,7 +25,10 @@
                     <select name="category_id" class="form-select @error('category_id') is-invalid @enderror"  required>
                         <option value="">Select Category</option>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" 
+                                {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
                         @endforeach
                     </select>
                     @error('category_id')
@@ -35,10 +38,18 @@
 
                 <div class="mb-3">
                     <label class="form-label">Product Image <span class="text-danger">*</span></label>
-                    <input type="file" name="product_image" class="form-control @error('product_image') is-invalid @enderror"  accept=".png, .jpg, .jpeg" >
+                    <input type="file" name="product_image" id="product_image_input" class="form-control @error('product_image') is-invalid @enderror"  accept=".png, .jpg, .jpeg" >
+                    @if(Session::has('temp_image_path'))
+                        <input type="hidden" name="existing_temp_image" value="{{ Session::get('temp_image_path') }}">
+                    @endif
                     @error('product_image')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
+                </div>
+
+                <div id="image_preview_container" class="mt-2" style="{{ Session::has('temp_image_url') ? 'display: block;' : 'display: none;' }}">
+                    <p class="small text-muted">Selected image:</p>
+                    <img id="image_preview" src="{{ Session::get('temp_image_url') ?? '' }}" alt="Preview" style="width: 80px;" class="img-thumbnail">
                 </div>
 
                 <div class="mb-3">
@@ -50,12 +61,19 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">GST/SGST Amount</label>
-                    <input type="number" min="0" step="0.01" name="gst_amount" id="gst_amount" class="form-control @error('gst_amount') is-invalid @enderror" value="{{ old('gst_amount') }}" placeholder="Enter the GST/SGST Amount">
-                    @error('gst_amount')
+                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                    <input type="number" name="quantity" id="quantity" min="1" max="100" class="form-control @error('quantity') is-invalid @enderror" value="{{ old('quantity',1) }}" required>
+                    @error('quantity')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+
+
+                <div class="mb-3">
+                    <label class="form-label">GST Amount (Auto Calculated)</label>
+                    <input type="number" id="gst_amount" class="form-control" readonly>
+                </div>
+
               
                 <div class="mb-3">
                     <label class="form-label">Total Price (including GST)</label>
@@ -107,7 +125,7 @@
 
                 <div class="text-end">
                     <button type="submit" class="btn btn-primary">Save Product</button>
-                    <a href="{{ route('product.index') }}" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ route('product.temp.cancel') }}" class="btn btn-secondary">Cancel</a>
                 </div>
 
             </form>
@@ -119,15 +137,62 @@
 
 @push('scripts')
 <script>
-    function calculateTotal(){
+    const sgst = {{ $sgst }};
+    const cgst = {{ $cgst }};
+
+    function calculateGST() {
         let price = parseFloat(document.getElementById('product_price').value) || 0;
-        let gst = parseFloat(document.getElementById('gst_amount').value) || 0;
-        document.getElementById('total_price').value = (price + gst).toFixed(2);
+        let quantity = parseFloat(document.getElementById('quantity').value) || 1;
+        if (quantity>=1 && quantity<=100)
+        {
+            let baseAmount = price * quantity;
+    
+            let gstAmount = baseAmount * (sgst + cgst) / 100;
+            let total = baseAmount + gstAmount;
+    
+            document.getElementById('gst_amount').value = gstAmount.toFixed(2);
+            document.getElementById('total_price').value = total.toFixed(2);
+        }
     }
 
-    document.getElementById('product_price').addEventListener('input', calculateTotal);
-    document.getElementById('gst_amount').addEventListener('input', calculateTotal);
+    document.getElementById('product_price').addEventListener('input', calculateGST);
+    document.getElementById('quantity').addEventListener('input', calculateGST);
+    calculateGST();
 </script>
+
+<script>
+    document.getElementById('product_image_input').addEventListener('change', function(event) {
+    const reader = new FileReader();
+    reader.onload = function() {
+        const output = document.getElementById('image_preview');
+        const container = document.getElementById('image_preview_container');
+        output.src = reader.result;
+        container.style.display = 'block';
+    };
+    if(event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0]);
+    }
+});
+</script>
+
+
+<script>
+    let isSubmitting = false;
+
+    document.querySelector('form').addEventListener('submit', function () {
+        isSubmitting = true;
+    });
+
+    window.addEventListener('beforeunload', function () {
+        if (isSubmitting) return;
+
+        navigator.sendBeacon(
+            "{{ route('product.temp.clear') }}"
+        );
+    });
+</script>
+
+
 <script>
     document.getElementById('status').addEventListener('change', function() {
         let furnishedDiv = document.getElementById('furnishedFields');

@@ -14,12 +14,15 @@ class ProductDataTable
             'product_image',
             'product_name',
             'product_price',
+            'quantity',
             'gst_amount',
             'total_price',
             'purchase_date',
             'manufacture_date',
-            'status'
-        ]);
+            'status',
+            'created_at',
+        ])->latest();
+
 
         return DataTables::of($query)
             ->addIndexColumn()
