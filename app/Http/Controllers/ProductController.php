@@ -59,8 +59,8 @@ class ProductController extends Controller
             'product_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
     
-        // delete previous temp if exists
-        if (session()->has('temp_image_path')) {
+        if (session()->has('temp_image_path')) 
+        {
             Storage::disk('public')->delete(session('temp_image_path'));
         }
     

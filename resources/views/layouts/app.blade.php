@@ -20,6 +20,9 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
     <style>
+        /* body {
+            padding-top:30px;
+        } */
         .sidebar {
             width: 220px;
             min-height: 100vh;
@@ -136,7 +139,7 @@
              </div>
         @endauth
 
-        <main class="@auth content @else py-4 @endauth">
+        <main class="@auth content @else py-4 pt-5 @endauth">
             @yield('content')
         </main>
     </div>
