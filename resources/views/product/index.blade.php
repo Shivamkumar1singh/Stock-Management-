@@ -25,6 +25,13 @@
             <a href="{{ route('product.depreciation.export') }}" class="btn btn-success">
                 Export
             </a>
+            <a href="{{ route('depreciation.pdf.view') }}" class="btn btn-primary">
+                View PDF
+            </a>
+            
+            <a href="{{ route('depreciation.pdf.download') }}" class="btn btn-info">
+                Download PDF
+            </a>
             <a href="{{ route('product.create') }}" class="btn btn-primary">
                 Add New Product
             </a>

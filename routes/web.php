@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\DepreciationPdfController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -60,3 +61,6 @@ Route::delete('/category/{category}', [CategoryController::class, 'destroy'])->n
 Route::get('/setting', [SettingController::class, 'edit'])->name('setting.edit');
 Route::post('/setting', [SettingController::class, 'update'])->name('setting.update');
 
+// this is for exporting the products Depreciation details 
+Route::get('/depreciation/pdf/view', [DepreciationPdfController::class, 'view'])->name('depreciation.pdf.view');
+Route::get('/depreciation/pdf/download', [DepreciationPdfController::class, 'download'])->name('depreciation.pdf.download');
