@@ -9,12 +9,12 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class DepreciationPdfController extends Controller{
     private function getLastThreeYears()
     {
-        $maxYear = Depreciation::max('year') ?? now()->year;
+        $currentYear = now()->year;
 
         return [
-            $maxYear - 2,
-            $maxYear - 1,
-            $maxYear,
+            $currentYear - 2,
+            $currentYear - 1,
+            $currentYear,
         ];
     }
 
